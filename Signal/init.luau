@@ -55,11 +55,15 @@ function Connection:Disconnect()
 
 
 	-- If previous exist, set its next node to the current's next
-	if previousConnection then previousConnection._next = nextConnection end
+	if previousConnection then
+		previousConnection._next = nextConnection
+	end
 
 
 	-- If next exist, set its previous node to the current's previous
-	if nextConnection then nextConnection._previous = previousConnection end
+	if nextConnection then
+		nextConnection._previous = previousConnection
+	end
 
 
 	-- Dereference current's previous and next
@@ -85,7 +89,7 @@ export type Signal<ParamsT... = ...any> = {
 }
 
 
-local function addNewConnection(signal:Signal, connection:Connection)
+local function addNewConnection(signal: Signal, connection: Connection)
 
 
 	-- Tail will be missing if no connection was ever added
@@ -109,15 +113,15 @@ end
 
 -- Attach a callback to the signal
 function Signal:Connect(callback)
-	
+
 
 	-- Create a new connection
 	-- False isOnce says the connection should stay until it's manually disconnected
 	-- Save the provided callback to execute when a fire is received
 	local connection = setmetatable({}, Connection) :: Connection
 	connection._callback = callback
-	
-	
+
+
 	-- Insert connection at the end of connection list
 	addNewConnection(self, connection)
 
@@ -129,10 +133,10 @@ end
 
 
 function Signal:Once(callback)
-	
+
 
 	-- Create a new connection
-	-- True isOnce says the connection should auto drop after it receives a fire 
+	-- True isOnce says the connection should auto drop after it receives a fire
 	-- Save the provided callback to execute when a fire is received
 	local connection = setmetatable({}, Connection) :: Connection
 	connection._isOnce = true
@@ -149,15 +153,15 @@ end
 
 
 function Signal:Wait()
-	
-	
+
+
 	-- Create a new connection
-	-- True isOnce says the connection should auto drop after it receives a fire 
+	-- True isOnce says the connection should auto drop after it receives a fire
 	-- Save the current thread, for future resumption
 	local connection = setmetatable({}, Connection) :: Connection
 	connection._isOnce = true
 	connection._thread = coroutine.running()
-	
+
 
 	-- Insert connection at the end of connection list
 	addNewConnection(self, connection)
@@ -171,29 +175,33 @@ end
 
 -- Fire values to the signal which in turn will be returned to the waiters and attached callbacks
 function Signal:Fire(...)
-	
-	
+
+
 	-- Fetch the first connection
 	local connection = self._nextConnection
 
 
 	-- Traverse the linked list
 	while connection do
-		
-		
+
+
 		-- If waiter is a function, execute it via reusable threads
-		if connection._thread then task.spawn(connection._thread, ...)
-			
-			
+		if connection._thread then
+			task.spawn(connection._thread, ...)
+
+
 		-- If waiter is a yielded thread, execute it via task.spawn
-		elseif connection._callback then Threads.Spawn(connection._callback, ...)
+		elseif connection._callback then
+			Threads.Spawn(connection._callback, ...)
 
 
 		end
 
 
 		-- If connection was a once type, disconnect from the linked list
-		if connection._isOnce then connection:Disconnect() end
+		if connection._isOnce then
+			connection:Disconnect()
+		end
 
 
 		-- Get the next connection

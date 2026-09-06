@@ -25,11 +25,6 @@ end
 local p, q
 local success, temp
 
-local x = Promise.New(function(resolve, reject)
-	resolve(12345)
-	reject("")
-end)
-
 
 ----------------------------------------------------------------
 -- TEST_LATE_SUBSCRIBERS

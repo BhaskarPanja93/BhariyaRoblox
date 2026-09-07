@@ -83,6 +83,7 @@ export type Signal<ParamsT... = ...any> = {
 	Connect: (self: Signal<ParamsT...>, callback: (ParamsT...) -> ()) -> Connection<ParamsT...>,
 	Once: (self: Signal<ParamsT...>, callback: (ParamsT...) -> ()) -> Connection<ParamsT...>,
 	Wait: (self: Signal<ParamsT...>) -> ParamsT...,
+	DisconnectAll: (self: Signal<ParamsT...>) -> (),
 	_nextConnection: Connection<ParamsT...>?,
 	_tailConnection: Connection<ParamsT...>?,
 	__index: Signal<ParamsT...>
@@ -187,7 +188,7 @@ function Signal:Fire(...)
 
 		-- If waiter is a function, execute it via reusable threads
 		if connection._thread then
-			task.spawn(connection._thread, ...)
+			pcall(task.spawn, connection._thread, ...)
 
 
 		-- If waiter is a yielded thread, execute it via task.spawn
@@ -209,6 +210,28 @@ function Signal:Fire(...)
 	end
 end
 
+
+function Signal:DisconnectAll()
+
+
+	local connection = self._nextConnection
+	self._nextConnection = nil
+	self._tailConnection = nil
+
+
+	-- Traverse the linked list
+	while connection do
+
+		local next = connection._next
+
+
+		connection._previous = nil
+		connection._next = nil
+
+		-- Get the next connection
+		connection = next
+	end
+end
 
 
 -- Create a new signal

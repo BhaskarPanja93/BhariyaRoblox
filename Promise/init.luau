@@ -44,8 +44,6 @@ Promise.__index = Promise
 
 -- Promise type
 export type Promise<ResolveT... = ...any, RejectT... = ...any> = {
-	IsCompleted: ()->boolean,
-	IsSuccess: ()->boolean,
 	AndThen: (self: Promise<ResolveT..., RejectT...>, onResolve: ((ResolveT...) -> ())?, onReject: ((RejectT...) -> ())?) -> Promise<ResolveT..., RejectT...>,
 	Catch: (self: Promise<ResolveT..., RejectT...>, onReject: (RejectT...) -> ()) -> Promise<ResolveT..., RejectT...>,
 	Await: (self: Promise<ResolveT..., RejectT...>) -> (boolean, any),

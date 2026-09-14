@@ -23,6 +23,7 @@ local Vault = {} :: Types.Vault
 Vault.__index = Vault
 
 
+local ServerShuttingDown = false
 local DataStoreHolders: {[string]: Types.DataStoreHolder} = {}
 
 
@@ -109,8 +110,10 @@ return function<DataT>(dsName: string, vaultName: string, template: DataT): Data
 
 
 	-- Vault parameters scoped to the function
+	local SessionId = HttpService:GenerateGUID(false)
 	local UsableState = State(false)
 	local PublicData: DataT = DeepClone(template)
+	local LockData: Types.LockData = {JobId=game.JobId, Session=SessionId, LockedAt=0}
 	local ActivityData: Types.ActivityData =
 		{
 			FirstLogIn = now,
@@ -118,41 +121,46 @@ return function<DataT>(dsName: string, vaultName: string, template: DataT): Data
 			LastLogOut = now,
 			LastSave = now
 		}
-	local ReaderId = 0
+	local NextReaderId = 0
 	local ActiveReaders: {number} = {}
 	local HasUnsavedChanges= true
-	local DataUpdateSignal:Signal.Signal<any, ...any> = Signal()
-	local SessionId = HttpService:GenerateGUID(false)
+	local DataUpdatedSignal:Signal.Signal<any, ...any> = Signal()
 	local MessagingChanging = false
 	local MessagingUsableState = State(false)
 	local MessagingChannel: RBXScriptConnection
 	local LockAcquireChanging = false
 	local LockAcquireState = State(false)
+	local MSStoredLock: Types.LockData?
 	local MSLockState: Types.LockState
-	local DSLockState: Types.LockState
+	local AcquireSentAt = 0
+	local ResponseReceivedAt = 0
+	local AcquireSentTo = ""
+	local AcknowledgedReceivedFrom = ""
+	local ReleasedReceivedFrom = ""
 
 
 	vault.Name = vaultName
 	vault.Usable = UsableState
-	vault.DataUpdateSignal = DataUpdateSignal
+	vault.DataUpdatedSignal = DataUpdatedSignal
 	vault.SessionId = SessionId
+	vault.Locals = {}
 
 
 	-- The function to return activity data
-	vault.GetActivityData = function (self: Types.Vault<DataT>)
+	function vault:GetActivityData()
 		return ActivityData
 	end
 
 
 	-- The function to return public data
-	vault.GetPublicData = function (self: Types.Vault<DataT>)
+	function vault:GetPublicData()
 		return PublicData
 	end
 
 
 	-- The function to update any field in the data
 	-- This also signals all update listeners about the change
-	vault.UpdateData = function (value: any, ...)
+	function vault:UpdateData(value: any, ...)
 		local keys:{string|number} = {...}
 		local pointer:{[string|number]:any} = PublicData
 		-- Iterate through the keys and update the current pointer
@@ -170,14 +178,68 @@ return function<DataT>(dsName: string, vaultName: string, template: DataT): Data
 		-- Flag the vault as needs saving
 		HasUnsavedChanges = true
 		-- Fire the signal for data update listeners
-		DataUpdateSignal:Fire(value, ...)
+		DataUpdatedSignal:Fire(value, ...)
 	end
 
 
-	vault.PrepareAsync = function (self: Types.Vault<DataT>)
+	local function LockConsensusL1Async():(boolean, boolean?, Types.LockState?)
+		local success, lock:Types.LockData? = pcall(dsh.LockMemoryStore.GetAsync, dsh.LockMemoryStore, "_DVL/"..vaultName)
+		if not success then
+			return false, nil, nil
+		end
+		MSStoredLock = lock
+		if lock == nil then
+			MSLockState = Constants.LockState.NONEXISTANT
+			return true, nil, MSLockState
+		else
+			if lock.LockedAt + Constants.MSLockStaleDelay < now then
+				MSLockState = Constants.LockState.STALE
+			else
+				MSLockState = Constants.LockState.FRESH
+			end
+			return true, lock.Session==SessionId, MSLockState
+		end
+	end
 
 
-		-- TODO: PREPARE/REVIVE LOGIC
+	local function LockConsensusL2Async():(boolean, Types.AcquireStatus?)
+		if MSStoredLock == nil then return false, nil end
+		-- The code no longer checks the number of times acquire was sent, it checks time difference between acquire and response
+		-- So there is no need to worry about a delayed response. we can safely ignore that knowing it has updated the reception time
+		--if AcquireSentAt and ResponseReceivedAt > AcquireSentAt then
+		--	if AcquireSentTo == AcknowledgedReceivedFrom then
+		--		return true, Constants.AcquireState.ACKNOWLEDGED
+		--	elseif AcquireSentTo == ReleasedReceivedFrom then
+		--		return true, Constants.AcquireState.RELEASED
+		--	end
+		--end
+		local now = DateTime.now().UnixTimestampMillis
+		AcquireSentAt = now
+		AcquireSentTo = MSStoredLock.Session
+		AcknowledgedReceivedFrom = ""
+		ReleasedReceivedFrom = ""
+		local message:Types.InterVaultMessage = {Session=SessionId, SentAt=now, Reason=Constants.InterVaultMessageReason.ACQUIRE, JobID=game.JobId}
+		local success = pcall(MessagingService.PublishAsync, MessagingService, "_DVMS"..AcquireSentTo, message)
+		if not success then
+			return false, nil
+		end
+		local state = Constants.AcquireState.UNKNOWN
+		for i = 1, Constants.MessagingExpectedDelay + 1 do
+			if not #ActiveReaders then
+				return false, nil
+			end
+			task.wait(1)
+			if ReleasedReceivedFrom and ReleasedReceivedFrom == AcquireSentTo then
+				return true, Constants.AcquireState.RELEASED
+			elseif AcknowledgedReceivedFrom and AcknowledgedReceivedFrom == AcquireSentTo then
+				state = Constants.AcquireState.ACKNOWLEDGED
+			end
+		end
+		return true, state
+	end
+
+
+	local function ReviveAsync()
 
 
 		-- While another thread is altering messaging service, wait
@@ -185,12 +247,11 @@ return function<DataT>(dsName: string, vaultName: string, template: DataT): Data
 			MessagingUsableState.ChangeSignal:Wait()
 		end
 		MessagingChanging = true
-
-
-		-- If messaging is unusable, and the profile has readers, try making it usable
+		local attempt = 0
+		-- If messaging is unusable, and the vault has readers, try making it usable
 		while not MessagingUsableState.Current and #ActiveReaders do
 			local success, result = pcall(MessagingService.SubscribeAsync, MessagingService, "_DVMS"..SessionId,
-				function(Message: {Data:Types.InterDSMessages, Sent:number})
+				function(Message: {Data:Types.InterVaultMessage, Sent:number})
 					-- TODO: Messaging logic
 				end)
 			if success then
@@ -198,9 +259,10 @@ return function<DataT>(dsName: string, vaultName: string, template: DataT): Data
 				MessagingUsableState:Update(true)
 				break
 			end
+			warn("[Retrying 2] Attempt:", attempt, "MessagingService.SubscribeAsync", result)
 			task.wait(2)
-			warn("[Retrying 2] subscribe failed", result)
 		end
+		MessagingChanging = false
 
 
 		-- While another thread is altering lock acquiring, wait
@@ -208,51 +270,55 @@ return function<DataT>(dsName: string, vaultName: string, template: DataT): Data
 			LockAcquireState.ChangeSignal:Wait()
 		end
 		LockAcquireChanging = true
-
-
-		-- If lock is unacquired, and the profile has readers, try acquiring it
+		attempt = 0
+		-- If lock is unacquired, and the vault has readers, try acquiring it
 		while not LockAcquireState.Current and #ActiveReaders do
-			local success, lock:Types.LockData? = pcall(dsh.LockMemoryStore.GetAsync, dsh.LockMemoryStore, "_DVL/"..vaultName)
+			local success, owned, lockState: Types.LockState? = LockConsensusL1Async()
 			if not success then
-				warn("[Retrying 2] MemoryStore.GetAsync failed", lock)
+				warn("[Retrying 2] Attempt:", attempt, "MemoryStore.GetAsync failed", lockState)
 				task.wait(2)
 				continue
 			end
-			now = DateTime.now().UnixTimestampMillis
-			if lock == nil then -- MS NonExistent, Try L3 directly
-				MSLockState = Constants.LockState.NONEXISTANT
-				success, lock = pcall(dsh.LockDataStore.GetAsync, dsh.LockDataStore, "_DVL/"..vaultName, nil)
+			if lockState == Constants.LockState.NONEXISTANT then
+				-- TODO: steal
+
+			else
+				local success, acquired: Types.AcquireStatus? = LockConsensusL2Async()
 				if not success then
-					warn("[Retrying 5] DataStore.GetAsync failed", lock)
-					task.wait(5)
+					warn("[Retrying 2] MessagingService.PublishAsync failed", acquired)
+					task.wait(2)
 					continue
 				end
-				now = DateTime.now().UnixTimestampMillis -- DS Expired, Steal
-				if lock == nil then
-					DSLockState = Constants.LockState.NONEXISTANT
 
-				elseif lock.LockedAt + Constants.DSLockStaleDelay < now then
-					DSLockState = Constants.LockState.STALE
-
-				else
-					DSLockState = Constants.LockState.FRESH
-
+				if lockState == Constants.LockState.STALE then
+					if AcquireSentAt - ResponseReceivedAt >= Constants.MessagingExpectedDelay * 3 then
+						-- TODO: server dead, steal
+					end
 				end
-			elseif lock.LockedAt + Constants.MSLockStaleDelay < now then -- MS Expired, Try L2
-				MSLockState = Constants.LockState.STALE
-
-			else -- MS Fresh, Try L2
-				MSLockState = Constants.LockState.FRESH
-
 			end
+			task.wait(4)
 		end
+		LockAcquireChanging = false
+	end
 
 
-		local rid = ReaderId
-		ReaderId += 1
+	local function StasisAsync()
+		-- TODO: Stop updating lock and only keep update loop and messaging
+		-- TODO: Auto cleanup after MemoryStoreExpiryPeriod if vault stayed idle
+	end
+
+
+	local function CleanupAsync()
+		-- TODO: Cleanup any remaining functions and false-fire all signals to get rid of all yielded threads
+		-- TODO: Leave in a state that this vault becomes invisible
+	end
+
+
+	function vault:Prepare()
+		local rid = NextReaderId
+		NextReaderId += 1
 		table.insert(ActiveReaders, rid)
-
-
+		Threads.Defer(ReviveAsync)
 		-- Return a release function unique to the caller that can be called once and any further calls are ignored
 		return function ()
 			-- Check if the reader is still active (to prevent double-release bug)
@@ -260,13 +326,16 @@ return function<DataT>(dsName: string, vaultName: string, template: DataT): Data
 			if not index then return end
 			-- If yes, remove the reader
 			table.remove(ActiveReaders, index)
-			-- No readers remain, set the profile to stasis mode
+			-- No readers remain, set the vault to stasis mode
 			if not #ActiveReaders then
-			-- TODO: STASIS/RELEASE LOGIC
+				if ServerShuttingDown then CleanupAsync()
+				else StasisAsync()
+				end
 			end
 		end
 	end
 
 
+	Threads.Defer(ReviveAsync)
 	return vault
 end

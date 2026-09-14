@@ -2,12 +2,12 @@ local Types = require(script.Parent.Types)
 
 
 return {
-	InterDSMessageReason = table.freeze({
-		ACQUIRE 	= 0 	:: Types.InterDSMessageReason, -- Ask for lock from old server
-		RELEASED 	= 1 	:: Types.InterDSMessageReason, -- Vault was released and lock is either upgraded or removed
-		FORGET 		= 2 	:: Types.InterDSMessageReason, -- Ask old server to ignore previous acquire call
-		OK 			= 3 	:: Types.InterDSMessageReason, -- Server PONG response
-		UPDATE 		= 4 	:: Types.InterDSMessageReason, -- Remote data update from other server
+	InterVaultMessageReason = table.freeze({
+		ACQUIRE 	= 0 	:: Types.InterVaultMessageReason, -- Ask for lock from old server
+		RELEASED 	= 1 	:: Types.InterVaultMessageReason, -- Vault was released and lock is either upgraded or removed
+		FORGET 		= 2 	:: Types.InterVaultMessageReason, -- Ask old server to ignore previous acquire call
+		OK 			= 3 	:: Types.InterVaultMessageReason, -- Server PONG response
+		UPDATE 		= 4 	:: Types.InterVaultMessageReason, -- Remote data update from other server
 	}),
 	VaultState = table.freeze({
 		CREATED 	= 0 	:: Types.VaultState, -- Freshly created vault object
@@ -19,17 +19,20 @@ return {
 		RELEASED 	= 6 	:: Types.VaultState, -- Vault was called from other server or player rejoined and current vault is now stale and cleaned up
 	}),
 	LockState = table.freeze({
-		NONEXISTANT = -1,
-		STALE = 0,
-		FRESH = 1,
+		NONEXISTANT = -1	:: Types.LockState,
+		STALE 		= 0		:: Types.LockState,
+		FRESH 		= 1		:: Types.LockState,
+	}),
+	AcquireState = table.freeze({
+		UNKNOWN = -1 		:: Types.AcquireStatus,
+		ACKNOWLEDGED = 0 	:: Types.AcquireStatus,
+		RELEASED = 0 		:: Types.AcquireStatus,
 	}),
 
 	MSLockRenewalDelay 					= 20 * 1000, -- 20 seconds (Server updates MS after this interval)
 	MSLockStaleDelay 					= (20 * 1000 * 5) + 1000, -- 101 seconds (5 misses) (MS not updated for this interval is considered down or dead)
-	MemoryStoreLockExpiryDelay 			= 120 * 60 * 1000, -- 120 minutes (MS exist for this interval so other servers can see who owned the lock before down or dead, or still owns it)
+	MemoryStoreLockExpiryDelay 			= 30 * 60 * 1000, -- 30 minutes (MS exist for this interval so other servers can see who owned the lock before down or dead, or still owns it)
 
-	DSLockRenewalDelay 					= 60 * 1000, -- 60 seconds (Server updates the DS after this interval)
-	DSLockStaleDelay 					= (60 * 1000 * 5) + 1000, -- 301 seconds (5 misses) (DS not updated for this interval is considered down or dead)
 
 	MessagingExpectedDelay				= 7 * 1000, -- 7 seconds
 	DSSaveLoopDelay 					= 45 * 1000, -- 45 seconds

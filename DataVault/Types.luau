@@ -1,18 +1,18 @@
-
 local Promise = require("../Promise")
 local Signal = require("../Signal")
 local State = require("../State")
 
 
 export type Vault<DataT =	any> = {
-	PrepareAsync:				(self:Vault<DataT>)->()->(),
+	Prepare:					(self:Vault<DataT>)->()->(),
 	UpdateData: 				(self:Vault<DataT>, value:any, ...any)->(),
 	GetPublicData: 				(self:Vault<DataT>)->DataT,
 	GetActivityData:			(self:Vault<DataT>)->ActivityData,
 	Usable:						State.State<boolean>,
-	DataUpdateSignal:			Signal.Signal<any, ...any>,
+	DataUpdatedSignal:			Signal.Signal<any, ...any>,
 	SessionId:					string,
 	Name: 						string,
+	Locals:						{any},
 
 	__index: Vault<DataT>,
 }
@@ -23,8 +23,6 @@ export type LockData = {
 	LockedAt:number,
 	Session:string
 }
-
-
 
 
 export type ActivityData = {
@@ -41,9 +39,9 @@ export type DataStoreData = {
 }
 
 
-export type InterDSMessages = {
+export type InterVaultMessage = {
 	SentAt:number,
-	Reason:InterDSMessageReason,
+	Reason:InterVaultMessageReason,
 	JobID: string,
 	Session: string,
 	Extra: any
@@ -66,8 +64,9 @@ export type Acquirer = {
 }
 
 
+export type AcquireStatus = number
 export type LockState = number
 export type VaultState = number
-export type InterDSMessageReason = number
+export type InterVaultMessageReason = number
 
 return nil

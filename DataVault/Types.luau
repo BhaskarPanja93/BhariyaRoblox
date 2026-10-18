@@ -1,18 +1,17 @@
-local Promise = require("../Promise")
-local Signal = require("../Signal")
-local State = require("../State")
+local Signal = require(script.Parent.Parent:WaitForChild('Signal'))
+local State = require(script.Parent.Parent:WaitForChild('State'))
 
 
 export type Vault<DataT =	any> = {
 	Prepare:					(self:Vault<DataT>)->()->(),
 	UpdateData: 				(self:Vault<DataT>, value:any, ...any)->(),
-	GetPublicData: 				(self:Vault<DataT>)->DataT,
-	GetActivityData:			(self:Vault<DataT>)->ActivityData,
+	PublicData: 				DataT,
+	ActivityData:				ActivityData,
 	Usable:						State.State<boolean>,
 	DataUpdatedSignal:			Signal.Signal<any, ...any>,
 	SessionId:					string,
 	Name: 						string,
-	Locals:						{any},
+	Locals:						{},
 
 	__index: Vault<DataT>,
 }
@@ -48,10 +47,9 @@ export type InterVaultMessage = {
 }
 
 
-export type DataStoreHolder = {
+export type VaultsHolder = {
 	Name:string,
 	VaultDataStore:DataStore,
-	LockDataStore:DataStore,
 	LockMemoryStore:MemoryStoreHashMap,
 	Vaults:{[string]:Vault}
 }
@@ -65,8 +63,9 @@ export type Acquirer = {
 
 
 export type AcquireStatus = number
-export type LockState = number
+export type LockFreshness = number
 export type VaultState = number
 export type InterVaultMessageReason = number
+
 
 return nil

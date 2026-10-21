@@ -36,5 +36,5 @@ return {
 
 
 	MessagingExpectedDelay				= 7 * 1000, -- 7 seconds
-	DSSaveLoopDelay 					= 45 * 1000, -- 45 seconds
+	DSSaveLoopDelay 					= 60 * 1000, -- 60 seconds
 }

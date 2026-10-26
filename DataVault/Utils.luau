@@ -18,7 +18,11 @@ local function Reconcile<DataT>(target: any, template: DataT): DataT
 		return target
 	end
 	for key, value in pairs(template) do
-		target[key] = Reconcile(target[key], value)
+		if target[key] == nil then
+			target[key] = DeepClone(value)
+		elseif typeof(target[key]) == "table" and typeof(value) == "table" then
+			Reconcile(target[key], value)
+		end
 	end
 	return target
 end

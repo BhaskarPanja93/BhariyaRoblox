@@ -6,9 +6,11 @@ return {
 		ACQUIRE 	= 0 	:: Types.InterVaultMessageReason, -- Ask for lock from old server
 		RELEASED 	= 1 	:: Types.InterVaultMessageReason, -- Vault was released and lock is either upgraded or removed
 		FORGET 		= 2 	:: Types.InterVaultMessageReason, -- Ask old server to ignore previous acquire call
-		OK 			= 3 	:: Types.InterVaultMessageReason, -- Server PONG response
+		ACQUIRE_OK 	= 3 	:: Types.InterVaultMessageReason, -- Acquire acknowledgement
 		UPDATE 		= 4 	:: Types.InterVaultMessageReason, -- Remote data update from other server
+		UPDATE_OK 	= 5 	:: Types.InterVaultMessageReason, -- Remote data update acknowledgement
 	}),
+
 	VaultState = table.freeze({
 		CREATED 			= 0 	:: Types.VaultState, -- Freshly created vault object
 		MESSAGEPREPARING 	= 1 	:: Types.VaultState, -- Vault just started reviving, preparing messaging now
@@ -19,21 +21,10 @@ return {
 		RELEASING	 		= 6 	:: Types.VaultState, -- Server started releasing the vault
 		RELEASED 			= 7 	:: Types.VaultState, -- Vault was released and cleaned up rendering unusable
 	}),
-	LockFreshness = table.freeze({
-		NONEXISTENT = -1	:: Types.LockFreshness,
-		STALE 		= 0		:: Types.LockFreshness,
-		FRESH 		= 1		:: Types.LockFreshness,
-	}),
-	AcquireState = table.freeze({
-		UNKNOWN = -1 		:: Types.AcquireStatus,
-		ACKNOWLEDGED = 0 	:: Types.AcquireStatus,
-		RELEASED = 0 		:: Types.AcquireStatus,
-	}),
 
 	MSLockRenewalDelay 					= 20 * 1000, -- 20 seconds (Server updates MS after this interval)
 	MSLockStaleDelay 					= (20 * 1000 * 5) + 1000, -- 101 seconds (5 misses) (MS not updated for this interval is considered down or dead)
 	MemoryStoreLockExpiryDelay 			= 30 * 60 * 1000, -- 30 minutes (MS exist for this interval so other servers can see who owned the lock before down or dead, or still owns it)
-
 
 	MessagingExpectedDelay				= 7 * 1000, -- 7 seconds
 	DSSaveLoopDelay 					= 60 * 1000, -- 60 seconds

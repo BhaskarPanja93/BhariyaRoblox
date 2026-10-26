@@ -4,11 +4,11 @@ local State = require(script.Parent.Parent:WaitForChild('State'))
 
 export type Vault<DataT =	any> = {
 	Prepare:					(self:Vault<DataT>)->()->(),
-	UpdateData: 				(self:Vault<DataT>, value:any, ...any)->(),
-	PublicData: 				DataT,
-	ActivityData:				ActivityData,
+	UpdateData: 				(self:Vault<DataT>, keys:{string|number}, value:any)->(),
+	GetPublicData: 				(self:Vault<DataT>)->DataT,
+	GetActivityData: 			(self:Vault<DataT>)->ActivityData,
 	Usable:						State.State<boolean>,
-	DataUpdatedSignal:			Signal.Signal<any, ...any>,
+	DataUpdatedSignal:			Signal.Signal<{string|number}, any>,
 	SessionId:					string,
 	Name: 						string,
 	Locals:						{},
@@ -41,7 +41,6 @@ export type DataStoreData = {
 export type InterVaultMessage = {
 	SentAt:number,
 	Reason:InterVaultMessageReason,
-	JobID: string,
 	Session: string,
 	Extra: any
 }
@@ -59,6 +58,14 @@ export type Acquirer = {
 	JobId:string,
 	Session:string,
 	AcquireTime:number
+}
+
+export type RemoteUpdateData = {
+	DS: string,
+	Vault: string,
+	Keys: {string|number},
+	Value: any,
+	ID: string,
 }
 
 

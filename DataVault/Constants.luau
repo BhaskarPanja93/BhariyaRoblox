@@ -7,8 +7,6 @@ return {
 		RELEASED 	= 1 	:: Types.InterVaultMessageReason, -- Vault was released and lock is either upgraded or removed
 		FORGET 		= 2 	:: Types.InterVaultMessageReason, -- Ask old server to ignore previous acquire call
 		ACQUIRE_OK 	= 3 	:: Types.InterVaultMessageReason, -- Acquire acknowledgement
-		UPDATE 		= 4 	:: Types.InterVaultMessageReason, -- Remote data update from other server
-		UPDATE_OK 	= 5 	:: Types.InterVaultMessageReason, -- Remote data update acknowledgement
 	}),
 
 	VaultState = table.freeze({

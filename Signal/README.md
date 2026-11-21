@@ -6,7 +6,7 @@
 
 **A lightweight publish–subscribe module for Roblox Luau.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-8b5cf6?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/version-1.0.1-8b5cf6?style=for-the-badge)](#)
 [![Platform](https://img.shields.io/badge/platform-Roblox-111827?style=for-the-badge&logo=roblox)](#)
 [![Language](https://img.shields.io/badge/language-Luau-00A2FF?style=for-the-badge)](#)
 [![Type System](https://img.shields.io/badge/types-Generic-16a34a?style=for-the-badge)](#)
@@ -614,12 +614,6 @@ Before using Signal as a foundation for larger systems, test the cases that matt
 
 ---
 
-## 📦 Version
-
-**Signal v1.0.0**
-
----
-
 ## 🤝 Contributing
 
 Found a bug or have an improvement?
@@ -644,3 +638,7 @@ Small, reproducible test cases make event-system bugs much easier to track down.
 **Signal — let your systems talk without knowing each other.**
 
 </div>
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/BhariyaConnect"><strong>Bhariya</strong></a>
+</p>

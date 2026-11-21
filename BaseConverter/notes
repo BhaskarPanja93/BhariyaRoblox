@@ -1,0 +1,19 @@
+WHY:
+- Any storage form keeps data as string, taking more space for datatypes like numbers
+	"10000000" as Base10 is 8 bytes but the same converted to Base88 is "GC7o" which is only 4 bytes
+
+
+NOTES:
+- Only allows number to string and back
+
+
+TESTS:
+[PASSED] Encode and Decode (to and fro) for the same data
+
+
+UPDATES:
+- 06-09-2026
+	Minor changes and rearrangements for use in external editors
+- 17-11-2026
+	Added support for negative numbers
+]]

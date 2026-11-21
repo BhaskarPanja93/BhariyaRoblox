@@ -1,4 +1,4 @@
-local function DeepClone<T>(template: T): T
+const function DeepClone<T>(template: T): T
 	if type(template) ~= "table" then
 		return template :: T
 	end
@@ -10,7 +10,7 @@ local function DeepClone<T>(template: T): T
 end
 
 
-local function Reconcile<DataT>(target: any, template: DataT): DataT
+const function Reconcile<DataT>(target: any, template: DataT): DataT
 	if target == nil then
 		return DeepClone(template)
 	end

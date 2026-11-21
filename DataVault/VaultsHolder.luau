@@ -3,15 +3,14 @@
 --!optimize 2
 
 
-local DataStoreService = game:GetService("DataStoreService")
-local MemoryStoreService = game:GetService("MemoryStoreService")
+const DataStoreService = game:GetService("DataStoreService")
+const MemoryStoreService = game:GetService("MemoryStoreService")
 
 
-local Types = require(script.Parent:WaitForChild("Types"))
-local Utils = require(script.Parent:WaitForChild("Utils"))
+const Types = require(script.Parent:WaitForChild("Types"))
 
 
-local VaultsHolders: {[string]: Types.VaultsHolder} = {}
+const VaultsHolders: {[string]: Types.VaultsHolder} = {}
 
 
 -- Fetch a VaultsHolder

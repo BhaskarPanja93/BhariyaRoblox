@@ -6,7 +6,7 @@
 
 **Reuse threads. Skip unnecessary creation. Keep your async code moving.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-8b5cf6?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/version-1.0.1-8b5cf6?style=for-the-badge)](#)
 [![Platform](https://img.shields.io/badge/platform-Roblox-111827?style=for-the-badge&logo=roblox)](#)
 [![Language](https://img.shields.io/badge/language-Luau-00A2FF?style=for-the-badge)](#)
 
@@ -374,12 +374,6 @@ Thread is intentionally small. Use Roblox's `task` library directly whenever you
 
 ---
 
-## 📦 Version & updates
-
-**Thread v1.0.0**
-
----
-
 ## 🤝 Contributing
 
 Found a bug or have a reproducible performance result? Include:
@@ -402,3 +396,7 @@ Performance claims are most useful when they include the workload, number of sch
 **Thread — small pool, simple API, familiar scheduling.**
 
 </div>
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/BhariyaConnect"><strong>Bhariya</strong></a>
+</p>

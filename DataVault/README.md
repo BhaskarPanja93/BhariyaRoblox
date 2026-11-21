@@ -6,7 +6,7 @@
 
 **One player. One active vault. Multiple servers. Zero intentional lock races.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-8b5cf6?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/version-1.0.1-8b5cf6?style=for-the-badge)](#)
 [![Platform](https://img.shields.io/badge/platform-Roblox-111827?style=for-the-badge&logo=roblox)](#)
 [![Language](https://img.shields.io/badge/language-Luau-00A2FF?style=for-the-badge)](#)
 [![Storage](https://img.shields.io/badge/storage-DataStore%20%2B%20MemoryStore-16a34a?style=for-the-badge)](#)
@@ -581,12 +581,6 @@ No. Simultaneous opens of the same vault should use the same/upgraded template. 
 
 ---
 
-## 📦 Version
-
-**DataVault v1.0.0**
-
-The implementation is designed around Roblox DataStoreService, MemoryStoreService, and MessagingService. Check the repository's release notes and changelog for changes between versions.
-
 ## 🤝 Contributing
 
 Found a reproducible issue? Please include:
@@ -609,3 +603,7 @@ A clear reproduction is worth more than a screenshot of an error.
 **DataVault — keep the session coordinated.**
 
 </div>
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/BhariyaConnect"><strong>Bhariya</strong></a>
+</p>

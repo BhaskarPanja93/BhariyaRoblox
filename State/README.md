@@ -6,7 +6,7 @@
 
 **Change the value once. Let every dependent react.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-8b5cf6?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/version-1.0.1-8b5cf6?style=for-the-badge)](#)
 [![Platform](https://img.shields.io/badge/platform-Roblox-111827?style=for-the-badge&logo=roblox)](#)
 [![Language](https://img.shields.io/badge/language-Luau-00A2FF?style=for-the-badge)](#)
 [![Strict](https://img.shields.io/badge/typing-strict-16a34a?style=for-the-badge)](#)
@@ -399,13 +399,7 @@ State delegates notification to your Signal module. Error handling, listener ord
 - [ ] `Update()` refreshes `LastModified`.
 - [ ] Listeners receive old value first and new value second.
 - [ ] Listeners are notified even when old and new values are equal.
-- [ ] Disconnecting a connection follows the Signal module's behaviour.
-
----
-
-## 📦 Version
-
-**State v1.0.0**
+- [ ] Disconnecting a connection follows the Signal module's behavior.
 
 ---
 
@@ -416,3 +410,7 @@ State delegates notification to your Signal module. Error handling, listener ord
 **State — one value, many reactions.**
 
 </div>
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/BhariyaConnect"><strong>Bhariya</strong></a>
+</p>

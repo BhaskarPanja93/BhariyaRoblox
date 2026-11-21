@@ -6,7 +6,7 @@
 
 **A lightweight Promise implementation for Roblox Luau.**
 
-[![Version](https://img.shields.io/badge/version-2.0.0-8b5cf6?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/version-2.0.1-8b5cf6?style=for-the-badge)](#)
 [![Platform](https://img.shields.io/badge/platform-Roblox-111827?style=for-the-badge&logo=roblox)](#)
 [![Language](https://img.shields.io/badge/language-Luau-00A2FF?style=for-the-badge)](#)
 
@@ -38,7 +38,7 @@ else
 end
 ```
 
-Promise v2.0.0 provides:
+Promise provides:
 
 - **Promises** — asynchronous results with resolve/reject states.
 - **Deferreds** — externally controlled promises.
@@ -826,6 +826,10 @@ No. Deferred gives you external control over a Promise. You are responsible for 
 
 ### Don't wait around for work. Represent it.
 
-**Promise v2.0.0 — asynchronous results, without the ceremony.**
+**Promise — asynchronous results, without the ceremony.**
 
 </div>
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/BhariyaConnect"><strong>Bhariya</strong></a>
+</p>

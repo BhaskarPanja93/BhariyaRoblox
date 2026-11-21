@@ -6,7 +6,7 @@
 
 **A compact Base-88 number encoder for Roblox Luau.**
 
-[![Version](https://img.shields.io/badge/version-1.1.0-8b5cf6?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/version-1.1.1-8b5cf6?style=for-the-badge)](#)
 [![Platform](https://img.shields.io/badge/platform-Roblox-111827?style=for-the-badge&logo=roblox)](#)
 [![Language](https://img.shields.io/badge/language-Luau-00A2FF?style=for-the-badge)](#)
 [![Base](https://img.shields.io/badge/base-88-16a34a?style=for-the-badge)](#)
@@ -423,12 +423,6 @@ Not necessarily. The character count is shorter for many values, but actual stor
 
 ---
 
-## 📦 Version
-
-**BaseConverter v1.1.0**
-
----
-
 <div align="center">
 
 ### 88 characters. Fewer digits. Same number.
@@ -436,3 +430,7 @@ Not necessarily. The character count is shorter for many values, but actual stor
 **BaseConverter — make your numbers compact.**
 
 </div>
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/BhariyaConnect"><strong>Bhariya</strong></a>
+</p>

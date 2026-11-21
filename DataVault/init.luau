@@ -4,42 +4,28 @@
 
 
 --[[
-DataVault v1.0.0
-
-NOTE:
-
-DSData.__PUBLIC = {Player = 100}
-vault:UpdateData({"Player", "Coins"}, 50)
-This is a case of undesired behavior and should be avoided
-
-vault:GetPublicData().Score = 1234
-Modifying data without UpdateDataAsync should be avoided as it may give unpredictable save behavior
-
-Template should always be roblox serializable, no guarantee will be provided for invalid or non-serializable data
-
-2 Templates for the same vault (opened simultaneously) should be the same, no guarantees will be provided otherwise
-
-Stasis keeps vault usable as true, beware, rather always hold a reader to the vault till you think the vault might be used
+DataVault v1.0.1
+Keep a note of the version for tracking updates and changes
 ]]
 
 
-local MessagingService = game:GetService("MessagingService")
-local HttpService = game:GetService("HttpService")
+const MessagingService = game:GetService("MessagingService")
+const HttpService = game:GetService("HttpService")
 
 
-local FetchVaultsHolder = require(script:WaitForChild('VaultsHolder'))
-local Signal = require(script.Parent:WaitForChild('Signal'))
-local State = require(script.Parent:WaitForChild('State'))
-local Thread = require(script.Parent:WaitForChild('Thread'))
-local Types = require(script:WaitForChild('Types'))
-local Utils = require(script:WaitForChild('Utils'))
-local Constants = require(script:WaitForChild("Constants"))
+const FetchVaultsHolder = require(script:WaitForChild('VaultsHolder'))
+const Signal = require(script.Parent:WaitForChild('Signal'))
+const State = require(script.Parent:WaitForChild('State'))
+const Thread = require(script.Parent:WaitForChild('Thread'))
+const Types = require(script:WaitForChild('Types'))
+const Utils = require(script:WaitForChild('Utils'))
+const Constants = require(script:WaitForChild("Constants"))
 
 
-local VaultsCount = State(0)
-local ServerShuttingDown = State(false)
-local LastMemoryStoreActionSuccess = State(true)
-local LastDataStoreActionSuccess = State(true)
+const VaultsCount = State(0)
+const ServerShuttingDown = State(false)
+const LastMemoryStoreActionSuccess = State(true)
+const LastDataStoreActionSuccess = State(true)
 const ServerSession = HttpService:GenerateGUID(false)
 
 
@@ -49,15 +35,15 @@ game:BindToClose(function()
 end)
 
 
-local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean, template: DataT): Types.Vault<DataT>
+const function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean, template: DataT): Types.Vault<DataT>
 
 
 	-- Fetch VaultsHolder
-	local vaultHolder = FetchVaultsHolder(dsName)
+	const vaultHolder = FetchVaultsHolder(dsName)
 
 
 	-- If vault already in server, return it blindly
-	local oldVault: Types.Vault<DataT> = vaultHolder.Vaults[vaultName]
+	const oldVault: Types.Vault<DataT> = vaultHolder.Vaults[vaultName]
 	if oldVault ~= nil then
 
 
@@ -70,8 +56,8 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Else create a new vault
-	local vault = {Hidden=hidden} :: Types.Vault<DataT>
-	local VaultSession = HttpService:GenerateGUID(false) -- Unique ID to find and track the vault session (will be used by other servers to talk to current server)
+	const vault = {Hidden=hidden} :: Types.Vault<DataT>
+	const VaultSession = HttpService:GenerateGUID(false) -- Unique ID to find and track the vault session (will be used by other servers to talk to current server)
 
 
 	-- Dummy lock value
@@ -90,27 +76,27 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Vault parameters scoped to the function
-	local VaultUsable = State(false) -- Vault starts with being unusable
-	local VaultState = State(Constants.VaultState.CREATED) -- Initial state of the vault is CREATED
+	const VaultUsable = State(false) -- Vault starts with being unusable
+	const VaultState = State(Constants.VaultState.CREATED) -- Initial state of the vault is CREATED
 	local NextReaderId = 0 -- Each reader gets its own ID
 	local ActiveReaders: {number} = {} -- ALl the active readers
-	local DataUpdatedSignal:Signal.Signal<{string|number}, any> = Signal() -- Fired when any data field changes
+	const DataUpdatedSignal:Signal.Signal<{string|number}, any> = Signal() -- Fired when any data field changes
 	local VaultPrivateState: Types.VaultPrivateState = Constants.VaultPrivateState.UNKNOWN -- Saves vault's private state
 
 
-	local AcquiresData = {
+	const AcquiresData = {
 		Sent = {ServerSession="", VaultSession="", At=0},
 		Received = {ServerSession="", VaultSession="", At=0}
 	} -- Saves all acquire related actions
 
 
-	local MessagingResponsesTimestamp = {
+	const MessagingResponsesTimestamp = {
 		AcquireAck = 0,
 		Released = 0
 	} -- Saves all Acquire response actions
 
 
-	local ReadyStates = {
+	const ReadyStates = {
 		Messaging = false,
 		Lock = false,
 		InitialData = false,
@@ -118,13 +104,13 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 	} -- Saves the ready states of all services
 
 
-	local Requirements = {
+	const Requirements = {
 		DataSaveLoop = true,
 		LockRenewLoop = true,
 	} -- Saves all Requirements for the vault
 
 
-	local OngoingActions = {
+	const OngoingActions = {
 		PrivateState = State(false),
 		MessagingChannel = State(false),
 		LockChange = State(false),
@@ -134,12 +120,12 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 	}
 
 
-	local LastAchievedStates = {
+	const LastAchievedStates = {
 		Stasis = 0,
 	}
 
 
-	local LastActionCompletions = {
+	const LastActionCompletions = {
 		DataChange = 0,
 		DataSave = 0,
 		LockSave = 0
@@ -213,7 +199,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 		-- Execute in pcall to prevent key and index errors blocking the data change lock forever
-		local success, reason = pcall(function()
+		const success, reason = pcall(function()
 
 
 			-- Iterate through the keys and update the current pointer
@@ -282,7 +268,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Release the lock or upgrade it to the newest acquirer
-	local function UpgradeOrReleaseLockAsync()
+	const function UpgradeOrReleaseLockAsync()
 
 
 		-- While another thread is modifying lock, wait
@@ -310,7 +296,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 			-- Execute as pcall to prevent errors
-			local success, value:Types.LockData? = pcall(vaultHolder.LockMemoryStore.UpdateAsync, vaultHolder.LockMemoryStore, vaultName,
+			const success, value:Types.LockData? = pcall(vaultHolder.LockMemoryStore.UpdateAsync, vaultHolder.LockMemoryStore, vaultName,
 				function(current: Types.LockData?): Types.LockData?
 
 
@@ -355,8 +341,8 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 					-- Send released message to acquirer
-					local message: Types.InterVaultMessage = {ServerSession=ServerSession, VaultSession=VaultSession, SentAt=now, Reason=Constants.InterVaultMessageReason.RELEASED}
-					local mess_success, result = pcall(MessagingService.PublishAsync, MessagingService, value.ServerSession..":"..value.VaultSession, message)
+					const message: Types.InterVaultMessage = {ServerSession=ServerSession, VaultSession=VaultSession, SentAt=now, Reason=Constants.InterVaultMessageReason.RELEASED}
+					const mess_success, result = pcall(MessagingService.PublishAsync, MessagingService, value.ServerSession..":"..value.VaultSession, message)
 					if not mess_success then warn("[Retrying 3]", "MessagingService.PublishAsync Acquire response", result) end
 
 
@@ -394,7 +380,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Save data into datastore with the option to force save which forcefully saves ignoring last updated and last saved values
-	local function SaveDataAsync(forceSave: boolean)
+	const function SaveDataAsync(forceSave: boolean)
 
 
 		-- Count attempts for logging failure rates
@@ -410,7 +396,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 			-- Action Start time
-			local now = DateTime.now().UnixTimestampMillis
+			const now = DateTime.now().UnixTimestampMillis
 
 
 			-- If no unsaved changes after waiting, or last change was too recent and last save isn't too old, skip. But forceSave skips the time based skipping
@@ -426,7 +412,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 			-- SetAsync clones the last value of the data, so further modification while it is saving acts as new changes
-			local success, result = pcall(vaultHolder.VaultDataStore.SetAsync, vaultHolder.VaultDataStore, vaultName, {__ACTIVITY=ActivityData, __PUBLIC=PublicData})
+			const success, result = pcall(vaultHolder.VaultDataStore.SetAsync, vaultHolder.VaultDataStore, vaultName, {__ACTIVITY=ActivityData, __PUBLIC=PublicData})
 
 
 			-- Flag DataStore service as working or not
@@ -469,7 +455,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Closes Messaging for the vault
-	local function CloseMessagingAsync()
+	const function CloseMessagingAsync()
 
 
 		-- While another thread is modifying the state of the messaging, wait
@@ -505,7 +491,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 	-- Cleanup the vault from memory, leaving it totally unusable
 	-- It can not be recovered once cleaned up
-	local function CleanupAsync()
+	const function CleanupAsync()
 
 
 		-- Ignore run for already cleaned vault
@@ -572,8 +558,8 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 		if AcquiresData.Sent.VaultSession ~= "" then
 
 
-			local message: Types.InterVaultMessage = {ServerSession=ServerSession, VaultSession=VaultSession, SentAt=DateTime.now().UnixTimestampMillis, Reason=Constants.InterVaultMessageReason.FORGET}
-			local success, result = pcall(MessagingService.PublishAsync, MessagingService, AcquiresData.Sent.ServerSession..":"..AcquiresData.Sent.VaultSession, message)
+			const message: Types.InterVaultMessage = {ServerSession=ServerSession, VaultSession=VaultSession, SentAt=DateTime.now().UnixTimestampMillis, Reason=Constants.InterVaultMessageReason.FORGET}
+			const success, result = pcall(MessagingService.PublishAsync, MessagingService, AcquiresData.Sent.ServerSession..":"..AcquiresData.Sent.VaultSession, message)
 			if not success then warn("[Retrying 3]", "MessagingService.PublishAsync Forget", result) end
 
 
@@ -581,7 +567,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 		-- Cleanup if lock acquire was still waiting
-		local thread = LockAcquireThread
+		const thread = LockAcquireThread
 		LockAcquireThread = nil
 		if thread ~= nil and coroutine.status(thread) == "suspended" then task.spawn(thread, false) end
 
@@ -592,7 +578,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Performs operations based on messages received from another session or server
-	local function MessagingLogic(Message: {Data:Types.InterVaultMessage, Sent:number})
+	const function MessagingLogic(Message: {Data:Types.InterVaultMessage, Sent:number})
 
 
 		if Message.Data.Reason == Constants.InterVaultMessageReason.ACQUIRE then
@@ -608,8 +594,8 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 			AcquiresData.Received.At = Message.Data.SentAt
 
 
-			local message: Types.InterVaultMessage = {Reason=Constants.InterVaultMessageReason.ACQUIRE_OK, ServerSession=ServerSession, VaultSession=VaultSession, SentAt=DateTime.now().UnixTimestampMillis}
-			local success, result = pcall(MessagingService.PublishAsync, MessagingService, Message.Data.ServerSession..":"..Message.Data.VaultSession, message)
+			const message: Types.InterVaultMessage = {Reason=Constants.InterVaultMessageReason.ACQUIRE_OK, ServerSession=ServerSession, VaultSession=VaultSession, SentAt=DateTime.now().UnixTimestampMillis}
+			const success, result = pcall(MessagingService.PublishAsync, MessagingService, Message.Data.ServerSession..":"..Message.Data.VaultSession, message)
 			if not success then warn("[Retrying 3]", "MessagingService.PublishAsync Acquire response", result) end
 
 			-- If vault was already in stasis mode, upgrade directly
@@ -664,7 +650,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 				-- Activate the lock acquire suspended thread
-				local thread = LockAcquireThread
+				const thread = LockAcquireThread
 				LockAcquireThread = nil
 				LockData.LockedAt = Message.Data.SentAt
 				if thread ~= nil and coroutine.status(thread) == "suspended" then task.spawn(thread) end
@@ -676,7 +662,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Starts preparation of Messaging service for the vault (skips if it is already prepared)
-	local function PrepareMessagingAsync()
+	const function PrepareMessagingAsync()
 
 
 		-- While another thread is modifying the state of messaging, wait
@@ -704,7 +690,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 			-- Try subscribing to the session
-			local success, result = pcall(MessagingService.SubscribeAsync, MessagingService, ServerSession..":"..VaultSession, MessagingLogic)
+			const success, result = pcall(MessagingService.SubscribeAsync, MessagingService, ServerSession..":"..VaultSession, MessagingLogic)
 
 
 			-- If subscribe failed, retry after a delay
@@ -732,7 +718,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Acquire lock
-	local function AcquireLockAsync()
+	const function AcquireLockAsync()
 
 
 		-- While another thread is modifying the state of the lock, wait
@@ -761,12 +747,12 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 			-- Call Update in pcall to prevent errors breaking the loop
-			local success, result = pcall(vaultHolder.LockMemoryStore.UpdateAsync, vaultHolder.LockMemoryStore, vaultName,
+			const success, result = pcall(vaultHolder.LockMemoryStore.UpdateAsync, vaultHolder.LockMemoryStore, vaultName,
 				function(current: Types.LockData?): Types.LockData?
 
 
 					-- Mark function start time
-					local now = DateTime.now().UnixTimestampMillis
+					const now = DateTime.now().UnixTimestampMillis
 
 
 					if current == nil or (current.ServerSession == "" and current.VaultSession == "") then
@@ -842,7 +828,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 				-- Mark process start
-				local now = DateTime.now().UnixTimestampMillis
+				const now = DateTime.now().UnixTimestampMillis
 
 
 				-- Acquire was never sent
@@ -864,15 +850,15 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 					-- Send the acquire message
-					local message: Types.InterVaultMessage = {ServerSession=ServerSession, VaultSession=VaultSession, SentAt=now, Reason=Constants.InterVaultMessageReason.ACQUIRE}
-					success, result = pcall(MessagingService.PublishAsync, MessagingService, currentLock.ServerSession..":"..currentLock.VaultSession, message)
+					const message: Types.InterVaultMessage = {ServerSession=ServerSession, VaultSession=VaultSession, SentAt=now, Reason=Constants.InterVaultMessageReason.ACQUIRE}
+					const mess_success, mess_result = pcall(MessagingService.PublishAsync, MessagingService, currentLock.ServerSession..":"..currentLock.VaultSession, message)
 
 
-					if not success then
+					if not mess_success then
 
 
 						-- Acquire send failed
-						warn("[Retrying 3]", "MessagingService.PublishAsync Acquire", result)
+						warn("[Retrying 3]", "MessagingService.PublishAsync Acquire", mess_result)
 						task.wait(3)
 
 
@@ -893,7 +879,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 						Thread.Delay((Constants.MessagingExpectedDelayMS) / 1000 + 1, function(...)
 
 
-							local thread = LockAcquireThread
+							const thread = LockAcquireThread
 							LockAcquireThread = nil
 							if thread ~= nil and coroutine.status(thread) == "suspended" then task.spawn(thread) end
 
@@ -929,7 +915,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Read initial data from datastore
-	local function ReadDataAsync()
+	const function ReadDataAsync()
 
 
 		-- If vault state changed while waiting, ignore the call
@@ -949,7 +935,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 			-- Try reading data from DataStore
-			local success, result:Types.DataStoreData? = pcall(vaultHolder.VaultDataStore.GetAsync, vaultHolder.VaultDataStore, vaultName, nil)
+			const success, result:Types.DataStoreData? = pcall(vaultHolder.VaultDataStore.GetAsync, vaultHolder.VaultDataStore, vaultName, nil)
 
 
 			-- Mark Datastore Service working or not
@@ -970,7 +956,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 			-- Mark function start time
-			local now = DateTime.now().UnixTimestampMillis
+			const now = DateTime.now().UnixTimestampMillis
 
 
 			-- If data existed, use it
@@ -1019,7 +1005,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Upon data read, Save it every fixed amount of time
-	local function DataSaveLoop()
+	const function DataSaveLoop()
 
 
 		-- If there exist another loop, don't start a new loop
@@ -1032,7 +1018,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 			-- Mark function start time
-			local now = DateTime.now().UnixTimestampMillis
+			const now = DateTime.now().UnixTimestampMillis
 
 
 			-- If initial data not read, wait entire period
@@ -1063,7 +1049,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 	-- Set the vault in a semi-released mode where the vault is in the hands of the current server but lock is not renewed nor is data saved
 	-- Only use for this mode is to prevent re-reviving a new vault and resume operation on this one
-	local function StasisAsync()
+	const function StasisAsync()
 
 
 		-- Prevent already stasis or cleaned vaults
@@ -1072,7 +1058,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 		-- Set private states
 		VaultPrivateState = Constants.VaultPrivateState.STASIS
-		local now = DateTime.now().UnixTimestampMillis
+		const now = DateTime.now().UnixTimestampMillis
 		LastAchievedStates.Stasis = now
 
 
@@ -1145,7 +1131,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Renews lock only when it gets closer to stale
-	local function RenewLockAsync()
+	const function RenewLockAsync()
 
 
 		-- While another thread is modifying lock, wait
@@ -1165,7 +1151,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 		-- Execute as pcall to prevent errors breaking the loop
-		local success, last:Types.LockData? = pcall(vaultHolder.LockMemoryStore.UpdateAsync, vaultHolder.LockMemoryStore, vaultName,
+		const success, last:Types.LockData? = pcall(vaultHolder.LockMemoryStore.UpdateAsync, vaultHolder.LockMemoryStore, vaultName,
 			function(current: Types.LockData?): Types.LockData?
 
 
@@ -1225,7 +1211,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 	-- Upon lock acquire, keep it updated every fixed amount of time
-	local function LockRenewLoop()
+	const function LockRenewLoop()
 
 
 		-- If there exist another loop, don't start a new loop
@@ -1247,7 +1233,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 	-- Revive rebuilds missing or broken parts of the vault and make it new ready for use
 	-- It is async and so changes while this function is being executed can change or halt the process or reviving
-	local function ReviveAsync()
+	const function ReviveAsync()
 
 
 		-- Prevent already revived or cleaned vaults
@@ -1345,7 +1331,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 		-- Infinitely scale count to serve individual reader
-		local rid = NextReaderId
+		const rid = NextReaderId
 		NextReaderId += 1
 		table.insert(ActiveReaders, rid)
 
@@ -1355,7 +1341,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 		-- Return a release function unique to the caller that can be called once and any further calls are ignored
-		local releaseFunction = function ()
+		const releaseFunction = function ()
 
 
 			-- Release the shutdown callback
@@ -1363,7 +1349,7 @@ local function GetVault<DataT>(dsName: string, vaultName: string, hidden:boolean
 
 
 			-- Check if the reader is still active (to prevent double-release)
-			local index = table.find(ActiveReaders, rid)
+			const index = table.find(ActiveReaders, rid)
 
 
 			-- Skip if already called (reader absent)

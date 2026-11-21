@@ -4,40 +4,17 @@
 
 
 --[[
-State v1.0.0
-
-
-WHY:
-- It's hard to keep track and update every dependent everytime the value changes,
-	so it's better to have a callback for each dependent and let them update independently every time the "state" changes
-	(https://react.dev/reference/react/useState)
-
-
-NOTES:
-- State has generic type, so autofill will be a great help
-- Works somewhat similar to UseState in React.js where a change in the state causes a re-render
-- Sends both new and old value to the listeners on every update
-- Works even if new and old value are identical, so the listeners must be aware
-
-
-TESTS:
-
-
-UPDATES:
-- 07-09-2026
-	Minor changes and rearrangements for use in external editors
-- 14-10-2026
-	Major change, now sends old as well as new value to the listeners.
-	Listeners now receive the fire even if new value is identical to old one
+State v1.0.1
+Keep a note of the version for tracking updates and changes
 ]]
 
 
 -- Depends on my Signal Module
-local Signal = require(script.Parent:WaitForChild("Signal"))
+const Signal = require(script.Parent:WaitForChild("Signal"))
 
 
 -- The actual State object
-local State = {} :: State
+const State = {} :: State
 State.__index = State
 
 
@@ -57,7 +34,7 @@ function State:Update(newValue)
 
 
 	-- Save current time and new value
-	local oldValue = self.Current
+	const oldValue = self.Current
 	self.Current = newValue
 	self.LastModified = os.clock()
 
@@ -73,7 +50,7 @@ return function<T>(initial: T): State<T>
 
 
 	-- Create the state object
-	local state = setmetatable(
+	const state = setmetatable(
 		{
 			Current = initial,
 			LastModified = os.clock(),

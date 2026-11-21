@@ -1,0 +1,14 @@
+
+NOTES:
+DSData.__PUBLIC = {Player = 100}
+vault:UpdateData({"Player", "Coins"}, 50)
+This is a case of undesired behavior and should be avoided
+
+vault:GetPublicData().Score = 1234
+Modifying data without UpdateDataAsync should be avoided as it may give unpredictable save behavior
+
+Template should always be roblox serializable, no guarantee will be provided for invalid or non-serializable data
+
+2 Templates for the same vault (opened simultaneously) should be the same, no guarantees will be provided otherwise
+
+Stasis keeps vault usable as true, beware, rather always hold a reader to the vault till you think the vault might be used

@@ -4,42 +4,12 @@
 
 
 --[[
-Promise v2.0.0
-
-
-WHY:
-- To handle asynchronous operations, like fetching data from a server, without freezing the main thread
- 	by providing a placeholder object for a value that will arrive in the future.
-	(https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
-
-
-NOTES:
-- Promise has generic types so when using function autofill, it can help with variable names and types.
-	Deferred general types does not auto infer but IntelliSense helps if types are manually mentioned.
-- Promise will keep its status and value even after competition (immutable after first change)
-	Resetting a promise or deferred keeps its previous waiters still waiting (if any) and lets the promise resolve or reject again
-- Deferred is a wrapper over Promise that provides the resolver and rejecter for external competition
-- Deferred does not take or execute any function, user is supposed to run any task they want to, on their own
-
-
-TESTS:
-[PASSED] Checked for memory leaks
-	Callbacks are cleared after promise ends, while values and status stay, they are open to GC cleanup as soon as promise gets dereferenced
-
-
-UPDATES:
-- 07-09-2026
-	Minor changes and rearrangements for use in external editors
-- 21-11-2026
-	Ditched setmetatable and now used simple tables, this way doesn't expose internal variables
-	Changed promise to resolve or reject to a single value instead of a tuple
-	Await, AndThen and Catch are not field based functions instead of earlier method calls,
-		i.e. they are now invoked using (.) instead of (:)
-	Promise now has reset option
+Promise v2.0.1
+Keep a note of the version for tracking updates and changes
 ]]
 
 
-local Thread = require(script.Parent:WaitForChild("Thread"))
+const Thread = require(script.Parent:WaitForChild("Thread"))
 
 
 -- Promise type
@@ -63,7 +33,7 @@ export type Deferred<ResT, RejT> = {
 -- The executor can resolve the promise using the resolve callback or reject the promise with either reject callback, or throwing an error in which case the error will be used as the result
 -- NOTE: Executor function must not complete before its resolver or rejecter is called, in that case promise will be instantly resolved with the result "Promise executor completed without calling resolve or reject"
 -- To avoid this case (if the resolve or reject call is in a new thread) wait for the thread to end at the end of the executor function
-local function CreatePromise<ResT, RejT>(executor: (resolve: (ResT) -> (), reject: (RejT) -> ()) -> ()): Promise<ResT, RejT>
+const function CreatePromise<ResT, RejT>(executor: (resolve: (ResT) -> (), reject: (RejT) -> ()) -> ()): Promise<ResT, RejT>
 
 
 -- Completion states containing result and waiters and completed flag
@@ -73,7 +43,7 @@ local function CreatePromise<ResT, RejT>(executor: (resolve: (ResT) -> (), rejec
 
 
 	-- Function responsible for completing the promise
-	local function markComplete(s: boolean, r: ResT|RejT)
+	const function markComplete(s: boolean, r: ResT|RejT)
 
 
 		--If the promise has already resolved or rejected, ignore further attempts to resolve or reject it
@@ -96,7 +66,7 @@ local function CreatePromise<ResT, RejT>(executor: (resolve: (ResT) -> (), rejec
 
 
 		-- Start the executor function in a pcall to retrieve errors
-		local success, reason = pcall(executor,
+		const success, reason = pcall(executor,
 			function(r: ResT|RejT) markComplete(true, r) end,
 			function(r: ResT|RejT) markComplete(false, r) end
 		)
@@ -109,11 +79,11 @@ local function CreatePromise<ResT, RejT>(executor: (resolve: (ResT) -> (), rejec
 
 	-- AndThen attaches 2 optional callbacks that are called when the promise resolves or rejects respectively
 	-- Unlike JavaScript promises, AndThen does not return a chained promise
-	local function AndThen(onResolve: ((ResT)->())?, onReject: ((RejT)->())?)
+	const function AndThen(onResolve: ((ResT)->())?, onReject: ((RejT)->())?)
 
 
 		-- Function that checks for passed functions and executes based on success
-		local function onComplete(successful: boolean, res: ResT|RejT)
+		const function onComplete(successful: boolean, res: ResT|RejT)
 			if successful == true then
 				if onResolve ~= nil then onResolve(res :: ResT) end
 			else
@@ -131,14 +101,14 @@ local function CreatePromise<ResT, RejT>(executor: (resolve: (ResT) -> (), rejec
 
 	-- Catch, similar to AndThen takes only one function (onReject) as argument
 	-- Unlike JavaScript promises, Catch does not return a chained promise
-	local function Catch(onReject: (RejT)->())
+	const function Catch(onReject: (RejT)->())
 		AndThen(nil, onReject)
 	end
 
 
 	-- Await returns the success and result if promise is already complete
 	-- else halts current thread till the promise completes and then returns the success and result
-	local function Await(): (boolean, ResT|RejT)
+	const function Await(): (boolean, ResT|RejT)
 
 
 		-- Return if promise already completed
@@ -146,7 +116,7 @@ local function CreatePromise<ResT, RejT>(executor: (resolve: (ResT) -> (), rejec
 
 
 		-- Collect current thread (coroutine)
-		local currentThread = coroutine.running()
+		const currentThread = coroutine.running()
 
 
 		-- Insert a callback that resumes current thread with the success and result
@@ -161,7 +131,7 @@ local function CreatePromise<ResT, RejT>(executor: (resolve: (ResT) -> (), rejec
 	end
 
 
-	local function Reset()
+	const function Reset()
 		succeeded = nil
 	end
 
@@ -172,7 +142,7 @@ end
 
 
 -- Dummy promise object that allows resolving and rejecting externally
-local function CreateDeferred<ResT, RejT>(): Deferred<ResT, RejT>
+const function CreateDeferred<ResT, RejT>(): Deferred<ResT, RejT>
 
 
 	-- Store the resolver and rejecter
@@ -181,7 +151,7 @@ local function CreateDeferred<ResT, RejT>(): Deferred<ResT, RejT>
 
 
 	-- Dummy promise
-	local promise = CreatePromise(function(resolve: (ResT)->(), reject: (RejT)->())
+	const promise = CreatePromise(function(resolve: (ResT)->(), reject: (RejT)->())
 		resolver = resolve
 		rejecter = reject
 	end)
@@ -193,16 +163,16 @@ end
 
 
 -- Takes a function and its parameter and returns a promise that resolves with the function's return or rejects with any error caused
-local function Promisify<ParaT, ResT>(func: (ParaT)->ResT, parameter: ParaT)
+const function Promisify<ParaT, ResT>(func: (ParaT)->ResT, parameter: ParaT)
 
 
 	-- Defer is used instead of a promise because of luau's type inference issues
-	local deferred = CreateDeferred() :: Deferred<ResT, any>
+	const deferred = CreateDeferred() :: Deferred<ResT, any>
 
 
 	-- Execute function in a new thread and resolve or reject accordingly
 	Thread.Spawn(function()
-		local success, result = pcall(func, parameter)
+		const success, result = pcall(func, parameter)
 		if success then deferred.Resolve(result)
 		else deferred.Reject(result)
 		end
@@ -215,12 +185,12 @@ end
 
 
 -- Takes an iterable of promises as input and returns a single Promise. This returned promise fulfills when all of the input's promises fulfill
-local function All(iterable: {Promise})
+const function All(iterable: {Promise})
 	return CreatePromise(function(resolve: (any)->(), reject)
 
 
 		-- Pre count the number of promises passed
-		local count = #iterable
+		const count = #iterable
 
 
 		-- If empty iterable, resolve with empty list immediately
@@ -231,7 +201,7 @@ local function All(iterable: {Promise})
 
 
 		-- Create result table and count completed
-		local results = table.create(count)
+		const results = table.create(count)
 		local completed = 0
 
 
@@ -256,12 +226,12 @@ end
 
 
 -- Takes an iterable of promises as input and returns a single Promise. This returned promise fulfills when all of the input's promises settle
-local function AllSettled(iterable: {Promise})
+const function AllSettled(iterable: {Promise})
 	return CreatePromise(function(resolve:({{success: boolean, value: any} | {success: boolean, reason: any}})->())
 
 
 		-- Pre count the number of promises passed
-		local count = #iterable
+		const count = #iterable
 
 
 		-- If empty iterable, resolve with empty list immediately
@@ -272,7 +242,7 @@ local function AllSettled(iterable: {Promise})
 
 
 		-- Create result table and count completed
-		local results = table.create(count) :: {{success: boolean, value: any} | {success: boolean, reason: any}}
+		const results = table.create(count) :: {{success: boolean, value: any} | {success: boolean, reason: any}}
 		local completed = 0
 
 
@@ -293,7 +263,7 @@ end
 
 
 -- Takes an iterable of promises as input and returns a single Promise. This returned promise settles with the eventual state of the first promise that settles.
-local function Race(iterable: {Promise})
+const function Race(iterable: {Promise})
 	return CreatePromise(function(resolve: (any) -> (), reject: (any) -> ())
 		for _, promise in iterable do
 			promise.AndThen(resolve, reject)
@@ -303,12 +273,12 @@ end
 
 
 -- Takes an iterable of promises as input and returns a single Promise. This returned promise fulfills when any of the input's promises fulfills, with this first fulfillment value. It rejects when all of the input's promises reject
-local function Any(iterable: {Promise})
+const function Any(iterable: {Promise})
 	return CreatePromise(function(resolve, reject: ({any})->())
 
 
 		-- Pre count the number of promises passed
-		local count = #iterable
+		const count = #iterable
 		if count == 0 then
 			reject({})
 			return
@@ -316,7 +286,7 @@ local function Any(iterable: {Promise})
 
 
 		-- Store errors in case everyone rejects
-		local errors = table.create(count)
+		const errors = table.create(count)
 		local rejected = 0
 
 

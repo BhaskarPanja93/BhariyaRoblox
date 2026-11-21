@@ -1,0 +1,29 @@
+WHY:
+- To handle asynchronous operations, like fetching data from a server, without freezing the main thread
+ 	by providing a placeholder object for a value that will arrive in the future.
+	(https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+
+
+NOTES:
+- Promise has generic types so when using function autofill, it can help with variable names and types.
+	Deferred general types does not auto infer but IntelliSense helps if types are manually mentioned.
+- Promise will keep its status and value even after competition (immutable after first change)
+	Resetting a promise or deferred keeps its previous waiters still waiting (if any) and lets the promise resolve or reject again
+- Deferred is a wrapper over Promise that provides the resolver and rejecter for external competition
+- Deferred does not take or execute any function, user is supposed to run any task they want to, on their own
+
+
+TESTS:
+[PASSED] Checked for memory leaks
+	Callbacks are cleared after promise ends, while values and status stay, they are open to GC cleanup as soon as promise gets dereferenced
+
+
+UPDATES:
+- 07-09-2026
+	Minor changes and rearrangements for use in external editors
+- 21-11-2026
+	Ditched setmetatable and now used simple tables, this way doesn't expose internal variables
+	Changed promise to resolve or reject to a single value instead of a tuple
+	Await, AndThen and Catch are not field based functions instead of earlier method calls,
+		i.e. they are now invoked using (.) instead of (:)
+	Promise now has reset option

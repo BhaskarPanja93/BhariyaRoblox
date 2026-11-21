@@ -3,25 +3,8 @@
 --!optimize 2
 
 --[[
-BaseConverter v1.1.0
-
-
-WHY:
-- Any storage form keeps data as string, taking more space for datatypes like numbers
-	"10000000" as Base10 is 8 bytes but the same converted to Base88 is "GC7o" which is only 4 bytes
-
-
-NOTES:
-- Only allows number to string and back
-
-
-TESTS:
-[PASSED] Encode and Decode (to and fro) for the same data
-
-
-UPDATES:
-- 06-09-2026
-	Minor changes and rearrangements for use in external editors
+BaseConverter v1.1.1
+Keep a note of the version for tracking updates and changes
 ]]
 
 
@@ -39,17 +22,17 @@ local CHARACTER_SET = {
 	"0","1","2","3","4","5","6","7","8","9",
 
 	"!","@","#","$","%","^","&","*","(",")",
-	"-","_","=","+","[","]","{","}",";",":",
+	"|","_","=","+","[","]","{","}",";",":",
 	",",".","<",">","?","~"
 }
 
 
 -- Base of the encoded string value
-local BASE = #CHARACTER_SET
+const BASE = #CHARACTER_SET
 
 
 -- Negative sign
-local NEGATIVE_SIGN = "|"
+const NEGATIVE_SIGN = "-"
 
 
 -- Reverse map
@@ -64,11 +47,11 @@ end
 
 
 -- Encode a number to its string form
-local function Encode(n: number): string
+const function Encode(n: number): string
 
 
 	-- Determine whether the number is negative
-	local isNegative = n < 0
+	const isNegative = n < 0
 
 
 	-- Convert to positive number
@@ -101,7 +84,7 @@ local function Encode(n: number): string
 
 
 	-- Concat of the table gives the final encoded string
-	local encoded = table.concat(result)
+	const encoded = table.concat(result)
 
 
 	-- Add the negative sign if necessary
@@ -115,11 +98,11 @@ end
 
 
 -- Decode an encoded string back to its numeric form
-local function Decode(s: string): number
+const function Decode(s: string): number
 
 
 	-- Check for negative sign
-	local isNegative = s:sub(1, 1) == NEGATIVE_SIGN
+	const isNegative = s:sub(1, 1) == NEGATIVE_SIGN
 
 
 	-- Remove the sign if negative
